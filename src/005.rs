@@ -82,7 +82,6 @@ fn move_combined(
     from: usize,
     to: usize
 ) {
-    // let c = stacks[from].pop().unwrap();
     let split = stacks[from].len() - count;
     let v = &stacks[from][split..].to_owned();
     stacks[from].truncate(split);
