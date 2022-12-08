@@ -45,6 +45,16 @@ fn main () {
 
     let res: HashSet<u32> = HashSet::from_iter(visible.into_iter());
     println!("{:?}", res.len());
+
+    // println!("Score {}", get_tree_score(&forest, 2, 3));
+    let mut scores = Vec::new();
+    for y in 0..forest.len() {
+        for x in 0..forest[0].len() {
+            scores.push(get_tree_score(&forest, x, y));
+        }
+    }
+    scores.sort();
+    println!("{:?}", scores.iter().max());
 }
 
 fn get_row(forest: &Vec<Vec<Tree>>, idx: usize, rev: bool) -> Vec<Tree> {
@@ -70,8 +80,35 @@ fn get_visible(line: Vec<Tree>) -> Vec<u32> {
         if line[idx].height > top {
             top = line[idx].height;
             v.push(line[idx].id);
-            // println!("Adding: {} at {}", line[idx].height, idx);
         }
     }
     v
+}
+
+fn get_ray_len(line: Vec<Tree>, start: usize) -> u32 {
+    let mut idx = start + 1;
+    let mut count = 0;
+    while idx < line.len() {
+        count += 1;
+        if line[idx].height >= line[start].height { return count }
+        idx += 1;
+    }
+    count
+}
+
+fn get_tree_score(forest: &Vec<Vec<Tree>>, col: usize, row: usize) -> u32 {
+    let h = forest.len() - 1;
+    let w = forest[0].len() - 1;
+    let lines = vec!(
+        (get_row(&forest, row, false), col),
+        (get_row(&forest, row, true), w - col),
+        (get_col(&forest, col, false), row),
+        (get_col(&forest, col, true), h - row),
+    );
+
+    let mut score = 1;
+    for line in lines {
+        score *= get_ray_len(line.0, line.1);
+    }
+    score
 }
