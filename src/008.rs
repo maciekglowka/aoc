@@ -4,7 +4,7 @@ use std::{
     iter::FromIterator
 };
 
-const INPUT_PATH: &str = "inputs/_008.txt";
+const INPUT_PATH: &str = "inputs/008.txt";
 
 #[derive(Clone, Copy, Debug)]
 struct Tree  {
@@ -33,12 +33,12 @@ fn main () {
     let mut visible = Vec::new();
 
     for y in 0..forest.len() {
-        println!("Y: {}", y);
+        // println!("Y: {}", y);
         visible.extend(get_visible(get_row(&forest, y, false)));
         visible.extend(get_visible(get_row(&forest, y, true)));
     }
     for x in 0..forest[0].len() {
-        println!("X: {}", x);
+        // println!("X: {}", x);
         visible.extend(get_visible(get_col(&forest, x, false)));
         visible.extend(get_visible(get_col(&forest, x, true)));
     }
@@ -66,12 +66,12 @@ fn get_col(forest: &Vec<Vec<Tree>>, idx: usize, rev: bool) -> Vec<Tree> {
 fn get_visible(line: Vec<Tree>) -> Vec<u32> {
     let mut top = line[0].height;
     let mut v: Vec<u32> = vec![line[0].id];
-    for idx in 1..line.len() {
-        if line[idx].height <= line[idx-1].height {
-            return v
+    for idx in 1..line.len() - 1 {
+        if line[idx].height > top {
+            top = line[idx].height;
+            v.push(line[idx].id);
+            // println!("Adding: {} at {}", line[idx].height, idx);
         }
-        v.push(line[idx].id);
-        println!("Adding: {} at {}", line[idx].height, idx);
     }
     v
 }
