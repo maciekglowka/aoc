@@ -70,7 +70,7 @@ fn main () {
 
     // println!("{:?}", visited.len());
 
-    let mut rope = [ Position{ x: 0, y: 0 }; 10];
+    let mut rope = [Position{ x: 0, y: 0 }; 10];
     let mut visited = HashSet::new();
     visited.insert(rope[9]);
 
