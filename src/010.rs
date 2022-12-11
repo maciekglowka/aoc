@@ -1,6 +1,4 @@
-use std::{
-    fs,
-};
+use std::fs;
 
 const INPUT_PATH: &str = "inputs/010.txt";
 
