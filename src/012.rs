@@ -69,11 +69,6 @@ fn main () {
         .filter_map(|t| t.borrow().score)
         .collect();
 
-    // let e = tiles[&end].borrow();
-    // if let Some(score) = e.score {
-    //     end_scores.push(score);
-    // }
-
     end_scores.sort();
     println!("{:?}", end_scores);
 }
