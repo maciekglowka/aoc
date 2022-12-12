@@ -4,13 +4,13 @@ use std::{
     fs
 };
 
-const INPUT_PATH: &str = "inputs/_012.txt";
+const INPUT_PATH: &str = "inputs/012.txt";
 
 fn main () {
     let file_str = fs::read_to_string(INPUT_PATH).unwrap();
 
-    let mut start = Point { x:0, y: 0};
-    let mut end = Point { x:0, y: 0};
+    // let mut start = Point { x:0, y: 0};
+    // let mut end = Point { x:0, y: 0};
 
     let tiles: HashMap<Point, RefCell<Tile>> = file_str.split('\n')
         .enumerate()
@@ -21,11 +21,11 @@ fn main () {
                     true => c,
                     false => match c {
                         'S' => {
-                            start = Point::from_u(x, y);
+                            // start = Point::from_u(x, y);
                             'a'
                         },
                         'E' => {
-                            end = Point::from_u(x, y);
+                            // end = Point::from_u(x, y);
                             'z'
                         },
                         _ => panic!()
@@ -34,7 +34,7 @@ fn main () {
                 (
                     Point::from_u(x, y),
                     RefCell::new(
-                        Tile { height: height as i32, ..Default::default() }
+                        Tile { c, height: height as i32, ..Default::default() }
                     )
                 )
             })
@@ -42,10 +42,13 @@ fn main () {
         .flatten()
         .collect();
 
+        let start = tiles.iter().find(|(k, v)| v.borrow().c == 'S').unwrap().0;
+        let end = tiles.iter().find(|(k, v)| v.borrow().c == 'E').unwrap().0;
+
         println!("End: {:?}", end);
         let mut queue = VecDeque::new();
-        tiles[&start].borrow_mut().score = Some(1);
-        queue.push_back(start);
+        tiles[&start].borrow_mut().score = Some(0);
+        queue.push_back(*start);
 
         while queue.len() > 0 {
             let cur = queue.pop_front().unwrap();
@@ -88,6 +91,7 @@ impl Point {
 
 #[derive(Clone, Debug, Default)]
 struct Tile {
+    pub c: char,
     pub height: i32,
     pub score: Option<usize>,
     pub came_from: Option<Point>
