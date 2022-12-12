@@ -9,10 +9,7 @@ const INPUT_PATH: &str = "inputs/012.txt";
 fn main () {
     let file_str = fs::read_to_string(INPUT_PATH).unwrap();
 
-    // let mut start = Point { x:0, y: 0};
-    // let mut end = Point { x:0, y: 0};
-
-    let tiles: HashMap<Point, RefCell<Tile>> = file_str.split('\n')
+    let orig_tiles: HashMap<Point, RefCell<Tile>> = file_str.split('\n')
         .enumerate()
         .map(move |(y, l)| l.chars()
             .enumerate()
@@ -20,14 +17,8 @@ fn main () {
                 let height = match c.is_lowercase() {
                     true => c,
                     false => match c {
-                        'S' => {
-                            // start = Point::from_u(x, y);
-                            'a'
-                        },
-                        'E' => {
-                            // end = Point::from_u(x, y);
-                            'z'
-                        },
+                        'S' => 'a',
+                        'E' => 'z',
                         _ => panic!()
                     }
                 };
@@ -42,13 +33,22 @@ fn main () {
         .flatten()
         .collect();
 
-        let start = tiles.iter().find(|(k, v)| v.borrow().c == 'S').unwrap().0;
-        let end = tiles.iter().find(|(k, v)| v.borrow().c == 'E').unwrap().0;
+    // let start = tiles.iter().find(|(k, v)| v.borrow().c == 'S').unwrap().0;
+    let end = orig_tiles.iter().find(|(k, v)| v.borrow().c == 'E').unwrap().0;
+    let starts: Vec<Point> = orig_tiles.iter()
+        .filter(|(k, v)| v.borrow().c == 'a')
+        .map(|(k, _)| *k)
+        .collect();
 
-        println!("End: {:?}", end);
+    let mut end_scores = Vec::new();
+
+    println!("End: {:?}", end);
+
+    for start in starts {
+        let tiles = orig_tiles.clone();
         let mut queue = VecDeque::new();
         tiles[&start].borrow_mut().score = Some(0);
-        queue.push_back(*start);
+        queue.push_back(start);
 
         while queue.len() > 0 {
             let cur = queue.pop_front().unwrap();
@@ -71,7 +71,15 @@ fn main () {
                 queue.push_back(p);
             }
         }
-        println!("{:?}", tiles[&end]);
+
+        let e = tiles[&end].borrow();
+        if let Some(score) = e.score {
+            end_scores.push(score);
+        }
+    }
+
+    end_scores.sort();
+    println!("{:?}", end_scores);
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
