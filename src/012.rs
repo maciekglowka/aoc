@@ -9,7 +9,7 @@ const INPUT_PATH: &str = "inputs/012.txt";
 fn main () {
     let file_str = fs::read_to_string(INPUT_PATH).unwrap();
 
-    let orig_tiles: HashMap<Point, RefCell<Tile>> = file_str.split('\n')
+    let tiles: HashMap<Point, RefCell<Tile>> = file_str.split('\n')
         .enumerate()
         .map(move |(y, l)| l.chars()
             .enumerate()
@@ -33,50 +33,46 @@ fn main () {
         .flatten()
         .collect();
 
-    // let start = tiles.iter().find(|(k, v)| v.borrow().c == 'S').unwrap().0;
-    let end = orig_tiles.iter().find(|(k, v)| v.borrow().c == 'E').unwrap().0;
-    let starts: Vec<Point> = orig_tiles.iter()
-        .filter(|(k, v)| v.borrow().c == 'a')
-        .map(|(k, _)| *k)
-        .collect();
+    let start = tiles.iter().find(|(k, v)| v.borrow().c == 'S').unwrap().0;
+    let end = tiles.iter().find(|(k, v)| v.borrow().c == 'E').unwrap().0;
 
-    let mut end_scores = Vec::new();
+    let mut queue = VecDeque::new();
+    tiles[&end].borrow_mut().score = Some(0);
+    queue.push_back(*end);
 
-    println!("End: {:?}", end);
+    while queue.len() > 0 {
+        let cur = queue.pop_front().unwrap();
+        let tile = &tiles[&cur].borrow();
 
-    for start in starts {
-        let tiles = orig_tiles.clone();
-        let mut queue = VecDeque::new();
-        tiles[&start].borrow_mut().score = Some(0);
-        queue.push_back(start);
-
-        while queue.len() > 0 {
-            let cur = queue.pop_front().unwrap();
-            let tile = &tiles[&cur].borrow();
-
-            for p in [
-                Point::new(cur.x-1, cur.y), Point::new(cur.x+1, cur.y),
-                Point::new(cur.x, cur.y-1), Point::new(cur.x, cur.y+1)
-            ] {
-                if !tiles.contains_key(&p) { continue; }
-                if let Some(score) = tiles[&p].borrow().score {
-                    if score <= 1+ tile.score.unwrap() { continue; } 
-                }
-                if tiles[&p].borrow().height - tile.height > 1 { continue; }
-
-                let mut n = tiles[&p].borrow_mut();
-
-                n.score = Some(tile.score.unwrap() + 1);
-                n.came_from = Some(cur);
-                queue.push_back(p);
+        for p in [
+            Point::new(cur.x-1, cur.y), Point::new(cur.x+1, cur.y),
+            Point::new(cur.x, cur.y-1), Point::new(cur.x, cur.y+1)
+        ] {
+            if !tiles.contains_key(&p) { continue; }
+            if let Some(score) = tiles[&p].borrow().score {
+                if score <= 1+ tile.score.unwrap() { continue; } 
             }
-        }
+            if tile.height - tiles[&p].borrow().height > 1 { continue; }
 
-        let e = tiles[&end].borrow();
-        if let Some(score) = e.score {
-            end_scores.push(score);
+            let mut n = tiles[&p].borrow_mut();
+
+            n.score = Some(tile.score.unwrap() + 1);
+            n.came_from = Some(cur);
+            queue.push_back(p);
         }
     }
+
+    println!("Start {:?}", tiles[&start]);
+
+    let mut end_scores: Vec<usize> = tiles.values()
+        .filter(|t| t.borrow().c == 'a')
+        .filter_map(|t| t.borrow().score)
+        .collect();
+
+    // let e = tiles[&end].borrow();
+    // if let Some(score) = e.score {
+    //     end_scores.push(score);
+    // }
 
     end_scores.sort();
     println!("{:?}", end_scores);
