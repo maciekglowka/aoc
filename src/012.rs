@@ -1,0 +1,94 @@
+use std::{
+    cell::RefCell,
+    collections::{HashMap, VecDeque},
+    fs
+};
+
+const INPUT_PATH: &str = "inputs/_012.txt";
+
+fn main () {
+    let file_str = fs::read_to_string(INPUT_PATH).unwrap();
+
+    let mut start = Point { x:0, y: 0};
+    let mut end = Point { x:0, y: 0};
+
+    let tiles: HashMap<Point, RefCell<Tile>> = file_str.split('\n')
+        .enumerate()
+        .map(move |(y, l)| l.chars()
+            .enumerate()
+            .map(move |(x, c)| {
+                let height = match c.is_lowercase() {
+                    true => c,
+                    false => match c {
+                        'S' => {
+                            start = Point::from_u(x, y);
+                            'a'
+                        },
+                        'E' => {
+                            end = Point::from_u(x, y);
+                            'z'
+                        },
+                        _ => panic!()
+                    }
+                };
+                (
+                    Point::from_u(x, y),
+                    RefCell::new(
+                        Tile { height: height as i32, ..Default::default() }
+                    )
+                )
+            })
+        )
+        .flatten()
+        .collect();
+
+        println!("End: {:?}", end);
+        let mut queue = VecDeque::new();
+        tiles[&start].borrow_mut().score = Some(1);
+        queue.push_back(start);
+
+        while queue.len() > 0 {
+            let cur = queue.pop_front().unwrap();
+            let tile = &tiles[&cur].borrow();
+
+            for p in [
+                Point::new(cur.x-1, cur.y), Point::new(cur.x+1, cur.y),
+                Point::new(cur.x, cur.y-1), Point::new(cur.x, cur.y+1)
+            ] {
+                if !tiles.contains_key(&p) { continue; }
+                if let Some(score) = tiles[&p].borrow().score {
+                    if score <= 1+ tile.score.unwrap() { continue; } 
+                }
+                if tiles[&p].borrow().height - tile.height > 1 { continue; }
+
+                let mut n = tiles[&p].borrow_mut();
+
+                n.score = Some(tile.score.unwrap() + 1);
+                n.came_from = Some(cur);
+                queue.push_back(p);
+            }
+        }
+        println!("{:?}", tiles[&end]);
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+struct Point {
+    pub x: i32,
+    pub y: i32
+}
+
+impl Point {
+    pub fn new(x: i32, y: i32) -> Point {
+        Point { x, y }
+    }
+    pub fn from_u(x: usize, y: usize) -> Point {
+        Point { x: x as i32, y: y as i32 }
+    }
+}
+
+#[derive(Clone, Debug, Default)]
+struct Tile {
+    pub height: i32,
+    pub score: Option<usize>,
+    pub came_from: Option<Point>
+}
