@@ -2,10 +2,10 @@ use std::{
     cmp::max,
     collections::HashSet,
     fs,
-    ops::{AddAssign, Sub}
+    ops::{Add, AddAssign, Sub}
 };
 
-const INPUT_PATH: &str = "inputs/_014.txt";
+const INPUT_PATH: &str = "inputs/014.txt";
 
 fn main () {
     let file_str = fs::read_to_string(INPUT_PATH).unwrap();
@@ -42,6 +42,32 @@ fn main () {
             }
         }
     }
+
+    let max_y = map.iter().fold(0, |acc, p| max(acc, p.y));
+    // println!("MAX {}", max_y);
+
+    let mut counter = 0;
+
+    'outer: loop {
+        let mut cur = Point { x: 500, y: 0 };
+
+        'inner: loop {
+
+            let next = [Point { x: 0, y: 1 }, Point { x: -1, y: 1 }, Point { x: 1, y: 1 }].iter()
+                .find(|p| !map.contains(&(cur + **p)));
+
+            if let Some(step) = next {
+                cur += *step;
+
+                if cur.y >= max_y { break 'outer; }
+            } else {
+                map.insert(cur);
+                counter += 1;
+                break 'inner;
+            }
+        }
+    }
+    println!("{}", counter);
 }
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
@@ -67,13 +93,14 @@ impl Point {
     }
 }
 
-// impl Add for Point {
-//     type Output = Self;
+impl Add for Point {
+    type Output = Self;
 
-//     fn add(self, other: Self) -> Self {
-//         return Point{ x: self.x + other.x, y: self.y + other.y}
-//     }
-// }
+    fn add(self, other: Self) -> Self {
+        return Point{ x: self.x + other.x, y: self.y + other.y}
+    }
+}
+
 impl AddAssign for Point {
     fn add_assign(&mut self, other: Self) {
         *self = Self{x: self.x + other.x, y: self.y + other.y};
