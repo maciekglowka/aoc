@@ -1,10 +1,8 @@
-use std::{
-    collections::HashSet,
-    fs
-};
+use std::fs;
 
 const INPUT_PATH: &str = "inputs/015.txt";
 const TARGET_LINE: i32 = 2000000;
+// const TARGET_LINE: i32 = 10;
 
 fn main () {
     let file_str = fs::read_to_string(INPUT_PATH).unwrap();
@@ -16,7 +14,8 @@ fn main () {
             [x0, y0, x1, y1]
         })
         .collect();
-    let mut set = HashSet::new();
+
+    let mut elements = Vec::new();
 
     for [x0, y0, x1, y1] in points {
         let dist = manhattan(x0, y0, x1, y1);
@@ -24,15 +23,22 @@ fn main () {
         if dy > dist { continue; }
 
         let dx = dist - dy;
+        elements.push((x0-dx, x0+dx));
+    }
 
-        for x in (x0-dx)..=(x0+dx) {
-            set.insert(x);
-        }
-    }
-    for x in excluded {
-        set.remove(&x);
-    }
-    println!("{:?}", set.len());
+    let range = Range::new(elements);
+    println!("Range: {:?}", range);
+
+    let s: i32 = range.elements.iter()
+        .map(|e| e.1 - e.0)
+        .sum();
+
+    println!("Sum: {:?}", s);
+
+    // for x in excluded {
+    //     set.remove(&x);
+    // }
+    // println!("{:?}", set.len());
 }
 
 fn parse_line(line: &str) -> [i32; 4] {
@@ -52,4 +58,28 @@ fn parse_line(line: &str) -> [i32; 4] {
 
 pub fn manhattan(x0: i32, y0: i32, x1: i32, y1: i32) -> i32 {
     (x0 - x1).abs() + (y0 - y1).abs()
+}
+
+#[derive(Debug)]
+struct Range {
+    pub elements: Vec<(i32, i32)>
+}
+
+impl Range {
+    pub fn new(mut input: Vec<(i32, i32)>) -> Range {
+        input.sort_by_key(|a| a.0);
+        let mut elements = vec!(input[0]);
+
+        for element in input[1..].iter() {
+            if elements.last().unwrap().1 < element.0 {
+                elements.push(*element);
+                continue;
+            }
+            if element.1 <= elements.last().unwrap().1 { continue; }
+
+            elements.last_mut().unwrap().1 = element.1;
+        }
+
+        Range { elements }
+    }
 }
