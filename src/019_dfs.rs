@@ -1,9 +1,8 @@
 use std::{
     cell::RefCell,
-    collections::{BTreeMap, HashMap, HashSet},
+    collections::HashMap,
     convert::TryInto,
     fs,
-    hash::{Hash, Hasher},
     iter::zip
 };
 
@@ -25,7 +24,15 @@ fn main() {
             cost.push([values[2][0], values[2][1], 0, 0]);
             // geode bot
             cost.push([values[3][0], 0, values[3][1], 0]);
-            Factory { cost }
+
+            let max_res_use = (0..4).map(|i| 
+                    cost.iter().map(|c| c[i]).max().unwrap()
+                )
+                .collect::<Vec<i32>>()
+                .try_into()
+                .unwrap();
+
+            Factory { cost, max_res_use }
         })
         .collect();
 
@@ -111,6 +118,8 @@ fn get_possible_actions(
     let mut actions: Vec<State> = factory.cost.iter()
         .enumerate()
         .filter_map(|(i, c)| {
+            if i != 3 && state.robots[i] >= factory.max_res_use[i] { return None; }
+
             let stock = pay(state.stock, *c);
             match stock.iter().any(|a| *a < 0) {
                 true => None,
@@ -145,7 +154,8 @@ struct State {
 
 #[derive(Debug)]
 struct Factory {
-    cost: Vec<[i32; 4]>
+    cost: Vec<[i32; 4]>,
+    max_res_use: [i32; 4]
 }
 
 fn parse_line(line: &str) -> Vec<Vec<i32>> {
