@@ -48,10 +48,8 @@ fn main() {
     let (score_0, cache) = run(&map, &blizzards, w, h, start, end, 0);
     println!("{}", score_0);
     let (score_1, cache) = run(&map, &cache[&score_0], w, h, end, start, score_0);
-    // println!("{}", score_1 - score_0);
 
     let (score_2, cache) = run(&map, &cache[&score_1], w, h, start, end, score_1);
-    // println!("{}", score_2 - score_1);
     println!("{}", score_2);
 }
 
@@ -111,7 +109,7 @@ fn run(
             });
         }
     }
-    (-1, HashMap::new())
+    panic!()
 }
 
 fn blizzard_step(current: &Blizzards, w: i64, h: i64) -> Blizzards {

@@ -1,14 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define DATA_PATH "../inputs/001.txt"
 #define LINE_LENGTH 255
 
-int main() {
+int main(int argc, char *argv[]) {
     FILE *textfile;
     char line[LINE_LENGTH];
 
-    textfile = fopen(DATA_PATH, "r");
+    textfile = fopen(argv[1], "r");
     if (textfile == NULL) return 1;
 
     int count = 0;
@@ -20,7 +19,7 @@ int main() {
         prev = i;
     }
 
-    printf("\n%d\n\n", count);
+    printf("%d\n", count);
 
     fclose(textfile);
 
