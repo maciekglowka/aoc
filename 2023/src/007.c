@@ -5,11 +5,18 @@
 #define LINE_LENGTH 255
 #define HAND_SIZE 5
 #define BID_IDX HAND_SIZE
-#define ROW_SIZE HAND_SIZE + 1
+#define SCORE_IDX HAND_SIZE + 1
+// hand size + bid + score
+#define ROW_SIZE HAND_SIZE + 2
 #define MAX_ROWS 1000
+// this includes non existing 0 & 1 for easier indexing
+#define CARD_TYPES 15
 
 void first(FILE*);
 void get_row(char*, int*);
+void get_counts(int*, int*);
+int score_hand(int*);
+int cmp_hands(const void*, const void*);
 
 int main(int argc, char *argv[]) {
     FILE *textfile;
@@ -28,8 +35,59 @@ void first(FILE* textfile) {
 
     while (fgets(line, LINE_LENGTH, textfile)) {
         get_row(line, rows[row_count]);
+        int counts[5] = {0};
+        get_counts(rows[row_count], counts);
+        rows[row_count][SCORE_IDX] = score_hand(counts);
+        // printf("%d\n", score);
         row_count++;
     }
+
+    qsort(rows, row_count, 7 * sizeof(int), cmp_hands);
+    int sum = 0;
+    for (int i=0; i<row_count; i++) {
+        sum += (i + 1) * rows[i][BID_IDX];
+    }
+    printf("First: %d\n", sum);
+    // for (int i=0; i<row_count; i++) {
+    //     for (int j=0; j<ROW_SIZE; j++) printf("%d ", rows[i][j]);
+    //     printf("\n");
+    // }
+}
+
+int cmp_hands(const void *a, const void *b) {
+    if (((int*)a)[SCORE_IDX] > ((int*)b)[SCORE_IDX]) return 1;
+    if (((int*)a)[SCORE_IDX] < ((int*)b)[SCORE_IDX]) return -1;
+
+    for (int i=0; i<HAND_SIZE; i++) {
+        if (((int*)a)[i] > ((int*)b)[i]) return 1;
+        if (((int*)a)[i] < ((int*)b)[i]) return -1;
+    }
+    return 0;
+}
+
+int score_hand(int *counts) {
+    if (counts[0] == 5) return 6;
+    if (counts[0] == 4) return 5;
+    if (counts[0] == 3 && counts[1] == 2) return 4;
+    if (counts[0] == 3) return 3;
+    if (counts[0] == 2 && counts[1] == 2) return 2;
+    if (counts[0] == 2) return 1;
+    return 0;
+}
+
+int cmp(const void *a, const void *b) {
+    return *(int*)b - *(int*)a;
+}
+
+void get_counts(int *row, int *out) {
+    int counts[CARD_TYPES] = {0};
+    for (int i=0; i<HAND_SIZE; i++) {
+        counts[row[i]]++;
+    }
+    qsort(counts, CARD_TYPES, sizeof(int), cmp);
+    // for (int i=0; i<CARD_TYPES; i++) printf("%d ", counts[i]);
+    // printf("\n");
+    for (int i=0; i<HAND_SIZE; i++) out[i] = counts[i];
 }
 
 void get_row(char *line, int *out) {
