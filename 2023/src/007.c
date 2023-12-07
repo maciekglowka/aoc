@@ -96,29 +96,14 @@ int cmp_hands(const void *a, const void *b) {
 }
 
 int score_hand_with_jokers(int *counts, int jokers) {
-    // hard coding ftw
+    counts[0] += jokers;
+
     if (counts[0] == 5) return 6;
-
-    if (counts[0] == 4 && jokers == 1) return 6;
     if (counts[0] == 4) return 5;
-
-    if (counts[0] == 3 && jokers == 2) return 6;
-    if (counts[0] == 3 && jokers == 1) return 5;
     if (counts[0] == 3 && counts[1] == 2) return 4;
     if (counts[0] == 3) return 3;
-
-    if (counts[0] == 2 && jokers == 3) return 6;
-    if (counts[0] == 2 && jokers == 2) return 5;
-    if (counts[0] == 2 && jokers == 1 && counts[1] == 2) return 4;
-    if (counts[0] == 2 && jokers == 1) return 3;
     if (counts[0] == 2 && counts[1] == 2) return 2;
     if (counts[0] == 2) return 1;
-
-    if (jokers == 5) return 6;
-    if (jokers == 4) return 6;
-    if (jokers == 3) return 5;
-    if (jokers == 2) return 3;
-    if (jokers == 1) return 1;
 
     return 0;
 }
