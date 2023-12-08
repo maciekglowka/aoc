@@ -9,6 +9,7 @@
 #define SEED 12049790
 
 struct node {
+    char literal[3];
     size_t left;
     size_t right;
 };
@@ -18,14 +19,15 @@ struct kv {
 };
 
 void first(FILE*);
+void second(FILE*);
 
 int main(int argc, char *argv[]) {
     FILE *textfile;
     textfile = fopen(argv[1], "r");
     if (textfile == NULL) return 1;
     first(textfile);
-    // rewind(textfile);
-    // second(textfile);
+    rewind(textfile);
+    second(textfile);
     return 0;
 }
 
@@ -37,8 +39,6 @@ void parse_input(
 ) {
     char line[LINE_LENGTH];
     int counter = -1;
-    // int commands[LINE_LENGTH];
-    // int commands_count;
 
     while (fgets(line, LINE_LENGTH, textfile)) {
         counter++;
@@ -59,13 +59,33 @@ void parse_input(
             left: stbds_hash_string(leaf_a, SEED),
             right: stbds_hash_string(leaf_b, SEED)
         };
+        for (int i=0; i<3; i++) n.literal[i] = key[i];
         hmput(*dict, hash, n);
-        // printf("%s %s %s\n", key, leaf_a, leaf_b);
-        // printf("Inserting: %s %lu\n", key, hash);
     }
-    // for (int i=0; i<commands_count; i++) printf("%d", commands[i]);
-    // printf("\n");
 }
+
+long lcm_2(long a, long b) {
+    // gcd
+    long gcd_a = a;
+    long gcd_b = b;
+    while (gcd_b) {
+        long t = gcd_b;
+        gcd_b = gcd_a % gcd_b;
+        gcd_a = t;
+    }
+    // printf("GCD: %ld\n", gcd_a);
+
+    return a * b / gcd_a;
+}
+
+long lcm(long* numbers, int count) {
+    long lcm = numbers[0];
+    for (int i=1; i<count; i++) {
+        lcm = lcm_2(lcm, numbers[i]);
+    }
+    return lcm;
+}
+
 
 void first(FILE* textfile) {
     struct kv *data = NULL;
@@ -73,28 +93,64 @@ void first(FILE* textfile) {
     int command_count;
     size_t first = stbds_hash_string("AAA", SEED);
     size_t target = stbds_hash_string("ZZZ", SEED);
-    // printf("Target: %lu\n", target);
     parse_input(textfile, &data, commands, &command_count);
-    // printf("%lu\n", hmlen(data));
-    // printf("%d\n", command_count);
-    // for (size_t i=0; i<hmlen(data); i++) {
-    //     printf("%lu\n", data[i].key);
-    // }
+
     size_t cur = first;
     long command_idx = 0;
     long steps = 0;
     while (cur != target) {
         struct node n = hmget(data, cur);
-        // printf("%lu, %lu", n.left, n.right);
-        // break;
+
         if (commands[command_idx] == 0) {
             cur = n.left;
         } else {
             cur = n.right;
         }
         command_idx = (command_idx + 1) % command_count;
-        // printf("%lu\n", cur);
         steps++;
     }
     printf("First: %ld\n", steps);
+}
+
+void second(FILE* textfile) {
+    struct kv *data = NULL;
+    int commands[LINE_LENGTH];
+    int command_count;
+    parse_input(textfile, &data, commands, &command_count);
+
+    int start_count = 0;
+    int end_count = 0;
+    size_t starts[10] = {0};
+    size_t ends[10] = {0};
+
+    for (size_t i=0; i<hmlen(data); i++) {
+        if (data[i].value.literal[2] == 'A') {
+            starts[start_count] = data[i].key;
+            start_count++;
+        }
+        if (data[i].value.literal[2] == 'Z') {
+            ends[end_count] = data[i].key;
+            end_count++;
+        }
+    }
+
+    long steps[10] = {0};
+    for (int i=0; i<start_count; i++) {
+        size_t cur = starts[i];
+        long command_idx = 0;
+        while (1) {
+            struct node n = hmget(data, cur);
+            if (n.literal[2] == 'Z') break;
+
+            if (commands[command_idx] == 0) {
+                cur = n.left;
+            } else {
+                cur = n.right;
+            }
+            command_idx = (command_idx + 1) % command_count;
+            steps[i]++;
+        }
+    }
+    long result = lcm(steps, start_count);
+    printf("Second: %ld\n", result);
 }
