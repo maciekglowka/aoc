@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
     if (textfile == NULL) return 1;
     solve(textfile, 1);
     rewind(textfile);
-    solve(textfile, 10);
+    solve(textfile, 1000000-1);
     // second(textfile);
     return 0;
 }
@@ -71,6 +71,6 @@ void solve(FILE* textfile, long offset) {
         }
     }
 
-    for (int i=0; i<galaxies_count; i++) printf("G: %ld %ld; ", galaxies[i][0], galaxies[i][1]);
+    // for (int i=0; i<galaxies_count; i++) printf("G: %ld %ld; ", galaxies[i][0], galaxies[i][1]);
     printf("Result: %lld\n", sum / 2);
 }
