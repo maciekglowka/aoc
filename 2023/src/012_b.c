@@ -114,8 +114,11 @@ long fit(
     int group_idx
 ) {
     if (group_idx == group_count) {
-        for (int i=0; i<layout_length; i++) printf("%d", occupancy[i]);
-        printf("\n");
+        for (int i=0; i<layout_length; i++) {
+            if (layout[i]==2 && occupancy[i]==0) return 0;
+        }
+        // for (int i=0; i<layout_length; i++) printf("%d", occupancy[i]);
+        // printf("\n");
         return 1;
     }
     long sum = 0;
@@ -206,7 +209,7 @@ void first(FILE* textfile) {
 
         // get_clusters(layout, layout_length, clusters, &cluster_count);
 
-        for (int i=0; i<layout_length; i++) printf("%d ", layout[i]);
+        for (int i=0; i<layout_length; i++) printf("%d", layout[i]);
         printf("\n");
         // for (int i=0; i<cluster_count; i++) printf("%d|%d ", clusters[i][0], clusters[i][1]);
         // printf("\n");
