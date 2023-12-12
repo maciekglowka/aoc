@@ -18,6 +18,16 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
+int max(int a, int b) {
+    if (a > b) return a;
+    return b;
+}
+
+int min(int a, int b) {
+    if (a < b) return a;
+    return b;
+}
+
 void read_layout(
     char* line,
     int layout[LINE_LENGTH],
@@ -91,8 +101,13 @@ int test_replacements(
     int groups[LINE_LENGTH],
     int group_count,
     int unknowns[LINE_LENGTH],
-    int unknown_count
+    int unknown_count,
+    int unknown_offset
 ) {
+    // for (int i=0; i<unknown_count; i++) printf("%d ", unknowns[i]);
+    // printf("\n");
+    // for (int i=0; i<layout_length; i++) printf("%d ", layout[i]);
+    // printf("\n");
     int tests = 0;
     for (__uint128_t i=0; i<(__uint128_t)pow(2, (__uint128_t)unknown_count); i++) {
         int tmp[LINE_LENGTH] = {0};
@@ -100,7 +115,7 @@ int test_replacements(
         for (int j=0; j<unknown_count; j++) {
             int v = 0;
             if (i & (1 << j)) v = 1;
-            tmp[unknowns[j]] = v;
+            tmp[unknowns[j] - unknown_offset] = v;
         }
         tests += test_layout(tmp, layout_length, groups, group_count);
     }
@@ -109,13 +124,10 @@ int test_replacements(
 
 void first(FILE* textfile) {
     char line[LINE_LENGTH];
-    int counter = 0;
 
     int sum = 0;
 
     while (fgets(line, LINE_LENGTH, textfile)) {
-        counter++;
-        // if (counter > 2) continue;
         int layout[LINE_LENGTH] = {0};
         int layout_length = 0;
         int groups[LINE_LENGTH] = {0};
@@ -130,48 +142,99 @@ void first(FILE* textfile) {
             unknown_count++;
         }
 
-        // printf("%s", line);
-        // for (int i=0; i<layout_length; i++) printf("%d ", layout[i]);
-        // printf("\n");
-
-        // int tests = 0;
-
-        // for (__uint128_t i=0; i<(__uint128_t)pow(2, (__uint128_t)unknown_count); i++) {
-        //     int tmp[LINE_LENGTH] = {0};
-        //     memcpy(tmp, layout, layout_length * sizeof(int));
-        //     for (int j=0; j<unknown_count; j++) {
-        //         int v = 0;
-        //         if (i & (1 << j)) v = 1;
-        //         tmp[unknowns[j]] = v;
-        //     }
-        //     // for (int i=0; i<layout_length; i++) printf("%d ", tmp[i]);
-        //     tests += test_layout(tmp, layout_length, groups, group_count);
-        //     // printf("T:%d\n", tests);
-        // }
-        // printf("L: %d\n", layout_length);
-        // printf("G: %d\n", group_count);
-        // for (int i=0; i<group_count; i++) printf("%d ", groups[i]);
-        // printf("T:%d\n", tests);
-        // printf("\n\n");
-        sum += test_replacements(
+        int sub = test_replacements(
             layout,
             layout_length,
             groups,
             group_count,
             unknowns,
-            unknown_count
+            unknown_count,
+            0
         );
-        // break;
+        printf("%d\n", sub);
+        sum += sub;
     }
     printf("First: %d\n", sum);
 }
+
+
+// void second(FILE* textfile) {
+//     char line[LINE_LENGTH];
+//     long long sum = 0;
+
+//     while (fgets(line, LINE_LENGTH, textfile)) {
+//         int layout[LINE_LENGTH] = {0};
+//         int layout_length = 0;
+//         int groups[LINE_LENGTH] = {0};
+//         int group_count = 0;
+
+//         read_layout(line, &layout[1], &layout_length, groups, &group_count);
+
+//         int unknowns[LINE_LENGTH] = {0};
+//         int unknown_count = 0;
+
+//         for (int i=1; i<=layout_length; i++) {
+//             if (layout[i] != -1) continue;
+//             unknowns[unknown_count + 1] = i;
+//             unknown_count++;
+//         }
+//         unknowns[0] = 0;
+//         unknowns[unknown_count + 1] = layout_length + 1;
+//         // for (int i=0; i<unknown_count+2; i++) printf("%d ", unknowns[i]);
+//         // printf("\n");
+
+//         int base = test_replacements(
+//             &layout[1],
+//             layout_length,
+//             groups,
+//             group_count,
+//             &unknowns[1],
+//             unknown_count,
+//             1
+//         );
+//         int r = base;
+//         if (layout[1] != 0) {
+//             r = test_replacements(
+//                 &layout[1],
+//                 layout_length+1,
+//                 groups,
+//                 group_count,
+//                 &unknowns[1],
+//                 unknown_count+1,
+//                 1
+//             );
+//         }
+//         int l = base;
+//         if (layout[layout_length] != 0) {
+//             l = test_replacements(
+//                 layout,
+//                 layout_length+1,
+//                 groups,
+//                 group_count,
+//                 unknowns,
+//                 unknown_count+1,
+//                 0
+//             );
+//         }
+
+//         printf("T:%d Tr:%d Tl: %d\n", base, r, l);
+
+//         // int a = tests / tests_half;
+//         long long total = base * (long long)pow(max(r, l), 4);
+//         printf("%lld\n", total);
+//         // printf("Th:%d T:%d Total: %d\n", tests_half, tests, total);
+//         // printf("\n\n");
+//         sum += total;
+//     }
+//     printf("Second: %lld\n", sum);
+// }
 
 
 void second(FILE* textfile) {
     char line[LINE_LENGTH];
     int counter = 0;
 
-    int sum = 0;
+    long long sum = 0;
 
     while (fgets(line, LINE_LENGTH, textfile)) {
         counter++;
@@ -208,15 +271,27 @@ void second(FILE* textfile) {
         // printf("\n");
         // for (int i=0; i<group_count; i++) printf("%d ", groups[i]);
         // printf("\n");
-        printf("%d %d %d\n", layout_length, group_count, unknown_count);
+        // printf("%d %d %d\n", layout_length, group_count, unknown_count);
 
-        int tests = test_replacements(
+        // printf("T:%d Tr:%d Tl: %d\n", tests_base, tests_r, tests_l);
+
+        int tests_half = test_replacements(
             layout,
             (layout_length-1)/2,
             groups,
             group_count/2,
             unknowns,
-            (unknown_count-1)/2
+            (unknown_count-1)/2,
+            0
+        );
+        int tests = test_replacements(
+            layout,
+            layout_length,
+            groups,
+            group_count,
+            unknowns,
+            unknown_count,
+            0
         );
 
         // // printf("%s", line);
@@ -242,10 +317,13 @@ void second(FILE* textfile) {
         // // printf("L: %d\n", layout_length);
         // // printf("G: %d\n", group_count);
         // // for (int i=0; i<group_count; i++) printf("%d ", groups[i]);
-        printf("T:%d\n", tests);
+
+        int a = tests / tests_half;
+        long long total = (long long)tests * (long long)pow(a, 3);
+        printf("Th:%d T:%d Total: %lld\n", tests_half, tests, total);
         // printf("\n\n");
-        sum += tests;
+        sum += total;
         // break;
     }
-    printf("Second: %d\n", sum);
+    printf("Second: %lld\n", sum);
 }
