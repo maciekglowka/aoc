@@ -4,10 +4,10 @@
 #include <string.h>
 
 #define LINE_LENGTH 255
-#define MAX_GROUPS 10
+#define MAX_GROUPS 50
 
 void first(FILE*);
-// void second(FILE*);
+void second(FILE*);
 
 int main(int argc, char *argv[]) {
     FILE *textfile;
@@ -60,30 +60,30 @@ void read_layout(
     }
 }
 
-void get_clusters(
-    int layout[LINE_LENGTH],
-    int layout_length,
-    int clusters[LINE_LENGTH][2],
-    int* cluster_count
-) {
-    int start = -1;
-    *cluster_count = 0;
-    int len = 0;
-    for (int i=0; i<layout_length; i++) {
-        if (layout[i] > 0) {
-            if (start == -1) start = i;
-            len++;
-            if (i < layout_length - 1) continue;
-        }
-        if (start > -1) {
-            clusters[*cluster_count][0] = start;
-            clusters[*cluster_count][1] = len;
-            start = -1;
-            len = 0;
-            (*cluster_count)++;
-        }
-    }
-}
+// void get_clusters(
+//     int layout[LINE_LENGTH],
+//     int layout_length,
+//     int clusters[LINE_LENGTH][2],
+//     int* cluster_count
+// ) {
+//     int start = -1;
+//     *cluster_count = 0;
+//     int len = 0;
+//     for (int i=0; i<layout_length; i++) {
+//         if (layout[i] > 0) {
+//             if (start == -1) start = i;
+//             len++;
+//             if (i < layout_length - 1) continue;
+//         }
+//         if (start > -1) {
+//             clusters[*cluster_count][0] = start;
+//             clusters[*cluster_count][1] = len;
+//             start = -1;
+//             len = 0;
+//             (*cluster_count)++;
+//         }
+//     }
+// }
 
 int cmp_groups(const void *a, const void *b) {
     return ((int*)b)[0] - ((int*)a)[0];
@@ -124,14 +124,22 @@ long fit(
     long sum = 0;
     int len = groups[group_idx][0];
     int seq = groups[group_idx][1];
+
+    int i_min = 0;
+    int i_max = layout_length-len;
+
+    for (int i=0; i<group_idx; i++) {
+        if (seq < order[i][2]) i_max = order[i][0] - len;
+        if (seq > order[i][2]) i_min = order[i][1];
+    }
     
-    for (int i=0; i<=layout_length-len; i++) {
+    for (int i=i_min; i<=i_max; i++) {
         int seq_check = 1;
         for (int j=0; j<group_idx; j++) {
             if (seq < order[j][2]) {
-                if (i+len >= order[j][0]) seq_check = 0;
+                if (i+len >= order[j][0]) { printf("s0"); seq_check = 0; }
             } else {
-                if (i <= order[j][1]) seq_check = 0;
+                if (i <= order[j][1]) { printf("s1"); seq_check = 0; }
             }
         }
         if (!seq_check) continue;
@@ -241,3 +249,133 @@ void first(FILE* textfile) {
     }
     printf("First: %lld\n", sum);
 }
+
+void second(FILE* textfile) {
+    char line[LINE_LENGTH];
+
+    long long sum = 0;
+    int counter = -1;
+
+    while (fgets(line, LINE_LENGTH, textfile)) {
+        counter++;
+        // if (counter>2) break;
+        int layout[LINE_LENGTH] = {0};
+        int layout_length = 0;
+        int groups[MAX_GROUPS][2] = {0};
+        int group_count = 0;
+        read_layout(line, layout, &layout_length, groups, &group_count);
+
+        for (int i=1; i<5; i++) {
+            for (int j=0; j<group_count; j++) {
+                groups[i * group_count + j][0] = groups[j][0];
+                groups[i * group_count + j][1] = groups[j][1] + i * 5 + 1;
+            }
+            layout[i * (layout_length + 1) - 1] = 1;
+            for (int j=0; j<layout_length; j++) {
+                layout[i * (layout_length + 1) + j] = layout[j];
+            }
+        }
+        group_count *= 5;
+        layout_length *= 5;
+        layout_length += 4;
+
+        for (int i=0; i<group_count; i++) printf("%d|%d ", groups[i][0], groups[i][1]);
+        printf("\n");
+        for (int i=0; i<layout_length; i++) printf("%d", layout[i]);
+        printf("\n");
+
+        qsort(groups, group_count, 2 * sizeof(int), cmp_groups);
+        int occupancy[LINE_LENGTH] = {0};
+        int order[MAX_GROUPS][3] = {0};
+
+        long sub = fit(
+            layout,
+            layout_length,
+            occupancy,
+            order,
+            groups,
+            group_count,
+            0
+        );
+        printf("%ld\n\n", sub);
+        sum += sub;
+    }
+    printf("Second: %lld\n", sum);
+}
+
+// void second(FILE* textfile) {
+//     char line[LINE_LENGTH];
+
+//     long long sum = 0;
+//     int counter = -1;
+
+//     while (fgets(line, LINE_LENGTH, textfile)) {
+//         counter++;
+//         // if (counter>2) break;
+//         int layout[LINE_LENGTH] = {0};
+//         int layout_length = 0;
+//         int groups[MAX_GROUPS][2] = {0};
+//         int group_count = 0;
+//         read_layout(line, layout, &layout_length, groups, &group_count);
+
+//         for (int i=1; i<2; i++) {
+//             for (int j=0; j<group_count; j++) {
+//                 groups[i * group_count + j][0] = groups[j][0];
+//                 groups[i * group_count + j][1] = groups[j][1] + i * 2 + 1;
+//             }
+//             layout[i * (layout_length + 1) - 1] = 1;
+//             for (int j=0; j<layout_length; j++) {
+//                 layout[i * (layout_length + 1) + j] = layout[j];
+//             }
+//         }
+//         group_count *= 2;
+//         layout_length *= 2;
+//         layout_length += 1;
+
+//         int half_groups[MAX_GROUPS][2] = {0};
+//         // memcmp(half_groups, groups, group_count * sizeof(int));
+//         for (int i=0; i<group_count/2; i++) {half_groups[i][0] = groups[i][0]; half_groups[i][1] = groups[i][1]; }
+
+//         qsort(groups, group_count, 2 * sizeof(int), cmp_groups);
+//         qsort(half_groups, group_count/2, 2 * sizeof(int), cmp_groups);
+
+//         for (int i=0; i<group_count; i++) printf("%d|%d ", groups[i][0], groups[i][1]);
+//         printf("\n");
+//         for (int i=0; i<group_count/2; i++) printf("%d|%d ", half_groups[i][0], half_groups[i][1]);
+//         printf("\n");
+
+//         int occupancy[LINE_LENGTH] = {0};
+//         int order[MAX_GROUPS][3] = {0};
+
+//         long tests_half = fit(
+//             layout,
+//             (layout_length-1)/2,
+//             occupancy,
+//             order,
+//             half_groups,
+//             group_count/2,
+//             0
+//         );
+
+//         // printf("%ld\n", tests_half);
+//         for (int i=0; i<LINE_LENGTH; i++) occupancy[LINE_LENGTH] = 0;
+//         for (int i=0; i<MAX_GROUPS; i++) { order[i][0] = 0; order[i][1] = 0; order[i][2] = 0; }
+
+//         long tests = fit(
+//             layout,
+//             layout_length,
+//             occupancy,
+//             order,
+//             groups,
+//             group_count,
+//             0
+//         );
+
+//         long a = tests / tests_half;
+//         long long sub = (long long)tests * (long long)pow(a, 3);
+//         printf("Th:%ld T:%ld Total: %lld\n", tests_half, tests, sub);
+//         printf("%lld\n\n", sub);
+//         sum += sub;
+//     }
+//     printf("Second: %lld\n", sum);
+// }
