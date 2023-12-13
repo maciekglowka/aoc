@@ -13,17 +13,27 @@ int main(int argc, char *argv[]) {
     FILE *textfile;
     textfile = fopen(argv[1], "r");
     if (textfile == NULL) return 1;
-    first(textfile);
+    // first(textfile);
     // rewind(textfile);
-    // second(textfile);
+    second(textfile);
     return 0;
+}
+
+int max(int a, int b) {
+    if (a > b) return a;
+    return b;
+}
+
+int min(int a, int b) {
+    if (a < b) return a;
+    return b;
 }
 
 void read_layout(
     char* line,
     int layout[LINE_LENGTH],
     int* layout_length,
-    int groups[LINE_LENGTH][2],
+    int groups[MAX_GROUPS][2],
     int* group_count
 ) {
     char token[LINE_LENGTH] = {0};
@@ -129,10 +139,12 @@ long fit(
     int i_max = layout_length-len;
 
     for (int i=0; i<group_idx; i++) {
-        if (seq < order[i][2]) i_max = order[i][0] - len;
-        if (seq > order[i][2]) i_min = order[i][1];
+        // printf("%d|%d|%d ", order[i][0], order[i][1], order[i][2]);
+        if (seq < order[i][2]) i_max = min(i_max, order[i][0] - len - 1);
+        if (seq > order[i][2]) i_min = max(i_min, order[i][1] + 2);
     }
-    printf("len: %d, min: %d, max: %d\n", len, i_min, i_max);
+    // printf("\n");
+    // printf("idx: %d len: %d, min: %d, max: %d\n", group_idx, len, i_min, i_max);
     for (int i=i_min; i<=i_max; i++) {
         // int seq_check = 1;
         // for (int j=0; j<group_idx; j++) {
@@ -161,13 +173,17 @@ long fit(
         // printf("Tested\n");
         int oc[LINE_LENGTH] = {0};
         for (int j=0; j<layout_length; j++) {
-            if (j < i || j > i + len) {
+            if (j < i || j > i + len - 1) {
                 oc[j] = occupancy[j];
             } else {
                 oc[j] = 1;
             }
             // printf("%d", oc[j]);
         }
+
+        // printf("Idx: %d, I: %d\n", group_idx, i);
+        // for (int i=0; i<layout_length; i++) printf("%d", oc[i]);
+        // printf("\n");
 
         int or[MAX_GROUPS][3] = {0};
         for (int j=0; j<group_idx; j++) {
@@ -191,8 +207,6 @@ long fit(
             group_count,
             group_idx+1
         );
-        for (int i=0; i<layout_length; i++) printf("%d", occupancy[i]);
-        printf("\n");
     }
     // printf("%ld\n", sum);
     return sum;
@@ -259,33 +273,36 @@ void second(FILE* textfile) {
 
     while (fgets(line, LINE_LENGTH, textfile)) {
         counter++;
-        // if (counter>2) break;
+        // if (counter!=1) continue;;
         int layout[LINE_LENGTH] = {0};
         int layout_length = 0;
         int groups[MAX_GROUPS][2] = {0};
         int group_count = 0;
         read_layout(line, layout, &layout_length, groups, &group_count);
 
-        for (int i=1; i<5; i++) {
+        int iter = 5;
+
+        for (int i=1; i<iter; i++) {
             for (int j=0; j<group_count; j++) {
                 groups[i * group_count + j][0] = groups[j][0];
-                groups[i * group_count + j][1] = groups[j][1] + i * 5 + 1;
+                groups[i * group_count + j][1] = groups[j][1] + i * iter + 1;
             }
             layout[i * (layout_length + 1) - 1] = 1;
             for (int j=0; j<layout_length; j++) {
                 layout[i * (layout_length + 1) + j] = layout[j];
             }
         }
-        group_count *= 5;
-        layout_length *= 5;
-        layout_length += 4;
+        group_count *= iter;
+        layout_length *= iter;
+        layout_length += iter - 1;
 
-        for (int i=0; i<group_count; i++) printf("%d|%d ", groups[i][0], groups[i][1]);
-        printf("\n");
-        for (int i=0; i<layout_length; i++) printf("%d", layout[i]);
-        printf("\n");
+        // for (int i=0; i<group_count; i++) printf("%d|%d ", groups[i][0], groups[i][1]);
+        // printf("\n");
+        // for (int i=0; i<layout_length; i++) printf("%d", layout[i]);
+        // printf("\n");
 
         qsort(groups, group_count, 2 * sizeof(int), cmp_groups);
+
         int occupancy[LINE_LENGTH] = {0};
         int order[MAX_GROUPS][3] = {0};
 
@@ -300,6 +317,7 @@ void second(FILE* textfile) {
         );
         printf("%ld\n\n", sub);
         sum += sub;
+        // break;
     }
     printf("Second: %lld\n", sum);
 }
@@ -307,11 +325,12 @@ void second(FILE* textfile) {
 // void second(FILE* textfile) {
 //     char line[LINE_LENGTH];
 
-//     long long sum = 0;
+//     unsigned long long sum = 0;
 //     int counter = -1;
 
 //     while (fgets(line, LINE_LENGTH, textfile)) {
 //         counter++;
+//         printf("Counter: %d ", counter);
 //         // if (counter>2) break;
 //         int layout[LINE_LENGTH] = {0};
 //         int layout_length = 0;
@@ -319,42 +338,45 @@ void second(FILE* textfile) {
 //         int group_count = 0;
 //         read_layout(line, layout, &layout_length, groups, &group_count);
 
-//         for (int i=1; i<2; i++) {
+//         int iter = 5;
+//         printf("Iter: %d\n", iter);
+
+//         for (int i=1; i<iter; i++) {
 //             for (int j=0; j<group_count; j++) {
 //                 groups[i * group_count + j][0] = groups[j][0];
-//                 groups[i * group_count + j][1] = groups[j][1] + i * 2 + 1;
+//                 groups[i * group_count + j][1] = groups[j][1] + i * iter + 1;
 //             }
 //             layout[i * (layout_length + 1) - 1] = 1;
 //             for (int j=0; j<layout_length; j++) {
 //                 layout[i * (layout_length + 1) + j] = layout[j];
 //             }
 //         }
-//         group_count *= 2;
-//         layout_length *= 2;
-//         layout_length += 1;
+//         group_count *= iter;
+//         layout_length *= iter;
+//         layout_length += iter - 1;
 
-//         int half_groups[MAX_GROUPS][2] = {0};
+//         int base_groups[MAX_GROUPS][2] = {0};
 //         // memcmp(half_groups, groups, group_count * sizeof(int));
-//         for (int i=0; i<group_count/2; i++) {half_groups[i][0] = groups[i][0]; half_groups[i][1] = groups[i][1]; }
+//         for (int i=0; i<group_count/iter; i++) {base_groups[i][0] = groups[i][0]; base_groups[i][1] = groups[i][1]; }
 
 //         qsort(groups, group_count, 2 * sizeof(int), cmp_groups);
-//         qsort(half_groups, group_count/2, 2 * sizeof(int), cmp_groups);
+//         qsort(base_groups, group_count/iter, 2 * sizeof(int), cmp_groups);
 
-//         for (int i=0; i<group_count; i++) printf("%d|%d ", groups[i][0], groups[i][1]);
-//         printf("\n");
-//         for (int i=0; i<group_count/2; i++) printf("%d|%d ", half_groups[i][0], half_groups[i][1]);
-//         printf("\n");
+//         // for (int i=0; i<group_count; i++) printf("%d|%d ", groups[i][0], groups[i][1]);
+//         // printf("\n");
+//         // for (int i=0; i<group_count/iter; i++) printf("%d|%d ", base_groups[i][0], base_groups[i][1]);
+//         // printf("\n");
 
 //         int occupancy[LINE_LENGTH] = {0};
 //         int order[MAX_GROUPS][3] = {0};
 
-//         long tests_half = fit(
+//         long tests_base = fit(
 //             layout,
-//             (layout_length-1)/2,
+//             (layout_length-1)/iter,
 //             occupancy,
 //             order,
-//             half_groups,
-//             group_count/2,
+//             base_groups,
+//             group_count/iter,
 //             0
 //         );
 
@@ -372,11 +394,17 @@ void second(FILE* textfile) {
 //             0
 //         );
 
-//         long a = tests / tests_half;
-//         long long sub = (long long)tests * (long long)pow(a, 3);
-//         printf("Th:%ld T:%ld Total: %lld\n", tests_half, tests, sub);
-//         printf("%lld\n\n", sub);
-//         sum += sub;
+//         long long sub = tests * tests / tests_base;
+//         // long a = tests / tests_base;
+//                 // long long sub = (long long)pow(tests, 4) / tests_base;
+//         // long long sub = (long long)tests * (long long)pow(a, 3);
+//         // printf("%lld\n", (long long)pow(a, 4));
+//         // long long sub = (long long)pow(a, 4) * (long long)tests_base;
+//         printf("Tb:%ld T:%ld Total: %lld\n", tests_base, tests, sub);
+//         // printf("%lld\n\n", sub);
+//         // sum += sub;
+//         printf("%ld\n", tests % tests_base);
+//         if (tests % tests_base) sum++;
 //     }
-//     printf("Second: %lld\n", sum);
+//     printf("Second: %llu\n", sum);
 // }
