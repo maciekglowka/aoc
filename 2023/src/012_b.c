@@ -96,8 +96,8 @@ int test_group(
     int len,
     int offset
 ) {
-    // printf("i: %d, len: %d\n", offset, len);
-    for (int i=0; i<len; i++) {
+    // printf("offset: %d\n", offset);
+    for (int i=0; i<=len-1; i++) {
         if (layout[i+offset] == 0) return 0;
         if (occupancy[i+offset] != 0) return 0;
     }
@@ -132,25 +132,25 @@ long fit(
         if (seq < order[i][2]) i_max = order[i][0] - len;
         if (seq > order[i][2]) i_min = order[i][1];
     }
-    
+    printf("len: %d, min: %d, max: %d\n", len, i_min, i_max);
     for (int i=i_min; i<=i_max; i++) {
-        int seq_check = 1;
-        for (int j=0; j<group_idx; j++) {
-            if (seq < order[j][2]) {
-                if (i+len >= order[j][0]) { printf("s0"); seq_check = 0; }
-            } else {
-                if (i <= order[j][1]) { printf("s1"); seq_check = 0; }
-            }
-        }
-        if (!seq_check) continue;
+        // int seq_check = 1;
+        // for (int j=0; j<group_idx; j++) {
+        //     if (seq < order[j][2]) {
+        //         if (i+len >= order[j][0]) { printf("s0"); seq_check = 0; }
+        //     } else {
+        //         if (i <= order[j][1]) { printf("s1"); seq_check = 0; }
+        //     }
+        // }
+        // if (!seq_check) continue;
 
         if (i>0) {
             if (layout[i-1] == 2) continue;
         }
-        if (i<layout_length-1) {
-            if (layout[i+len] == 2) continue;;
+        if (i+len<layout_length-1) {
+            if (layout[i+len] == 2) continue;
         }
-
+        // printf("Testing\n");
         if (!test_group(
             layout,
             layout_length,
@@ -158,10 +158,10 @@ long fit(
             len,
             i
         )) continue;
-
+        // printf("Tested\n");
         int oc[LINE_LENGTH] = {0};
         for (int j=0; j<layout_length; j++) {
-            if (j < i || j >= i + len) {
+            if (j < i || j > i + len) {
                 oc[j] = occupancy[j];
             } else {
                 oc[j] = 1;
@@ -176,7 +176,7 @@ long fit(
             or[j][2] = order[j][2];
         }
         or[group_idx][0] = i;
-        or[group_idx][1] = i+len;
+        or[group_idx][1] = i+len-1;
         or[group_idx][2] = seq;
 
         // printf("--%d\n", i);
@@ -191,7 +191,8 @@ long fit(
             group_count,
             group_idx+1
         );
-
+        for (int i=0; i<layout_length; i++) printf("%d", occupancy[i]);
+        printf("\n");
     }
     // printf("%ld\n", sum);
     return sum;
