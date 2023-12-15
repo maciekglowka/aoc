@@ -14,9 +14,9 @@ int main(int argc, char *argv[]) {
     FILE *textfile;
     textfile = fopen(argv[1], "r");
     if (textfile == NULL) return 1;
-    first(textfile);
+    // first(textfile);
     // rewind(textfile);
-    // second(textfile);
+    second(textfile);
     return 0;
 }
 
@@ -410,13 +410,15 @@ void second(FILE* textfile) {
         int groups[MAX_GROUPS][4] = {0};
         int group_count = 0;
         read_layout(line, layout, &layout_length, groups, &group_count);
+        // for (int i=0; i<group_count; i++) printf("%d|%d ", groups[i][0], groups[i][1]);
+        // printf("\n");
 
         int iter = 5;
 
         for (int i=1; i<iter; i++) {
             for (int j=0; j<group_count; j++) {
                 groups[i * group_count + j][0] = groups[j][0];
-                groups[i * group_count + j][1] = groups[j][1] + i * iter + 1;
+                groups[i * group_count + j][1] = groups[j][1] + i * group_count;
             }
             layout[i * (layout_length + 1) - 1] = 1;
             for (int j=0; j<layout_length; j++) {
@@ -428,15 +430,47 @@ void second(FILE* textfile) {
         layout_length += iter - 1;
 
         int acc = 0;
+        // for (int i=0; i<group_count; i++) {
+        //     groups[i][2] = acc;
+        //     acc += groups[i][0];
+        // }
         for (int i=0; i<group_count; i++) {
-            groups[i][2] = acc;
-            acc += groups[i][0];
+            for (int j=acc; j<layout_length; j++) {
+                int found = 1;
+                for (int k=j; k<j+groups[i][0]; k++) {
+                    if (layout[k] == 0) {
+                        found = 0;
+                        break;
+                    }
+                }
+                if (found) {
+                    acc = j + groups[i][0] - 1;
+                    groups[i][2] = j;
+                    break;
+                }
+            }
         }
 
-        acc = layout_length-1;
+        acc = layout_length - 1;
+        // for (int i=group_count-1; i>=0; i--) {
+        //     groups[i][3] = acc;
+        //     acc -= groups[i][0];
+        // }
         for (int i=group_count-1; i>=0; i--) {
-            groups[i][3] = acc;
-            acc -= groups[i][0];
+            for (int j=acc; j>=0; j--) {
+                int found = 1;
+                for (int k=j; k<j-groups[i][0]; k--) {
+                    if (layout[k] == 0) {
+                        found = 0;
+                        break;
+                    }
+                }
+                if (found) {
+                    acc = j - groups[i][0];
+                    groups[i][3] = j;
+                    break;
+                }
+            }
         }
 
         // for (int i=0; i<group_count; i++) printf("%d|%d ", groups[i][0], groups[i][1]);
@@ -444,10 +478,13 @@ void second(FILE* textfile) {
         // for (int i=0; i<layout_length; i++) printf("%d", layout[i]);
         // printf("\n");
 
-        for (int i=0; i<iter; i++) {
-            qsort(&groups[i*group_count/iter], group_count/iter, 4 * sizeof(int), cmp_groups);
-        }
-        // qsort(groups, group_count, 4 * sizeof(int), cmp_groups);
+        // for (int i=0; i<iter; i++) {
+        //     // printf("%d\n", i);
+        //     qsort(&groups[i*group_count/iter], group_count/iter, 4 * sizeof(int), cmp_groups);
+        // }
+        qsort(groups, group_count, 4 * sizeof(int), cmp_groups);
+        // for (int i=0; i<group_count; i++) printf("%d|%d ", groups[i][0], groups[i][1]);
+        // printf("\n");
 
         int occupancy[LINE_LENGTH] = {0};
         int order[MAX_GROUPS][3] = {0};
