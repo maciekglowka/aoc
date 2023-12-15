@@ -2,37 +2,37 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <time.h>
+#define STB_DS_IMPLEMENTATION
+#include "stb_ds.h"
 
 #define LINE_LENGTH 255
+#define MAX_GROUPS 50
+#define SEED 12049790
 
-void first(FILE*);
-void second(FILE*);
+struct kv {
+    size_t key;
+    long value;
+};
+
+void solve(FILE*, int);
 
 int main(int argc, char *argv[]) {
     FILE *textfile;
     textfile = fopen(argv[1], "r");
     if (textfile == NULL) return 1;
-    first(textfile);
-    // rewind(textfile);
-    // second(textfile);
+    solve(textfile, 1);
+    rewind(textfile);
+    solve(textfile, 5);
     return 0;
 }
 
-int max(int a, int b) {
-    if (a > b) return a;
-    return b;
-}
-
-int min(int a, int b) {
-    if (a < b) return a;
-    return b;
-}
 
 void read_layout(
     char* line,
     int layout[LINE_LENGTH],
     int* layout_length,
-    int groups[LINE_LENGTH],
+    int groups[MAX_GROUPS][2],
     int* group_count
 ) {
     char token[LINE_LENGTH] = {0};
@@ -43,9 +43,9 @@ void read_layout(
     for (int i=0; i<LINE_LENGTH; i++) {
         char c = line[i];
 
-        if (c == '?') layout[i] = -1;
-        if (c == '#') layout[i] = 0;
-        if (c == '.') layout[i] = 1;
+        if (c == '?') layout[i] = 1;
+        if (c == '#') layout[i] = 2;
+        if (c == '.') layout[i] = 0;
 
         if (c == ' ') {
             *layout_length = i;
@@ -61,269 +61,219 @@ void read_layout(
         }
 
         token[token_i] = 0;
-        groups[*group_count] = atoi(token);      
+        groups[*group_count][0] = atoi(token);      
+
         token_i = 0;
-        *group_count += 1;
+        (*group_count)++;
         if (c == '\n') break;
     }
 }
 
-int test_layout(
+int test_group(
     int layout[LINE_LENGTH],
     int layout_length,
-    int groups[LINE_LENGTH],
-    int group_count
+    int len,
+    int offset
 ) {
-    int group_idx = 0;
-    int group = 0;
-    // printf("\n");
-    for (int i=0; i<layout_length; i++) {
-        if (layout[i] == 0) { 
-            group++;
-            if (i!=layout_length-1) continue;
-        }
-        if (group != 0) {
-            // printf("G: %d, I: %d, GG: %d\n", group, group_idx, groups[group_idx]);
-            if (groups[group_idx] != group) return 0;
-            group_idx++;
-            group = 0;
-        }
+    if (offset > 0) {
+        if (layout[offset-1] == 2) return 0;
     }
-
-    // printf("OUT\n");
-    if (group_idx != group_count) return 0;
+    if (offset+len <= layout_length) {
+        if (layout[offset+len] == 2) return 0;
+    }
+    for (int i=0; i<=len-1; i++) {
+        if (layout[i+offset] == 0) return 0;
+    }
     return 1;
 }
 
-int test_replacements(
+void fit_first(
     int layout[LINE_LENGTH],
     int layout_length,
-    int groups[LINE_LENGTH],
+    int groups[MAX_GROUPS][2],
     int group_count,
-    int unknowns[LINE_LENGTH],
-    int unknown_count,
-    int unknown_offset
+    int group_idx,
+    int offset
 ) {
-    // for (int i=0; i<unknown_count; i++) printf("%d ", unknowns[i]);
-    // printf("\n");
-    // for (int i=0; i<layout_length; i++) printf("%d ", layout[i]);
-    // printf("\n");
-    int tests = 0;
-    for (__uint128_t i=0; i<(__uint128_t)pow(2, (__uint128_t)unknown_count); i++) {
-        int tmp[LINE_LENGTH] = {0};
-        memcpy(tmp, layout, layout_length * sizeof(int));
-        for (int j=0; j<unknown_count; j++) {
-            int v = 0;
-            if (i & (1 << j)) v = 1;
-            tmp[unknowns[j] - unknown_offset] = v;
-        }
-        tests += test_layout(tmp, layout_length, groups, group_count);
-    }
-    return tests;
-}
+    if (group_idx == group_count) return;
 
-void first(FILE* textfile) {
-    char line[LINE_LENGTH];
+    int len = groups[group_idx][0];
 
-    int sum = 0;
+    for (int i=offset; i<=layout_length-len; i++) {
+        if (!test_group(layout, layout_length, len, i)) continue;
 
-    while (fgets(line, LINE_LENGTH, textfile)) {
-        int layout[LINE_LENGTH] = {0};
-        int layout_length = 0;
-        int groups[LINE_LENGTH] = {0};
-        int group_count = 0;
-        read_layout(line, layout, &layout_length, groups, &group_count);
-
-        int unknown_count = 0;
-        int unknowns[LINE_LENGTH] = {0};
-        for (int i=0; i<layout_length; i++) {
-            if (layout[i] != -1) continue;
-            unknowns[unknown_count] = i;
-            unknown_count++;
-        }
-
-        int sub = test_replacements(
+        groups[group_idx][1] = i;
+        fit_first(
             layout,
             layout_length,
             groups,
             group_count,
-            unknowns,
-            unknown_count,
-            0
+            group_idx+1,
+            i+len+1
         );
-        printf("%d\n", sub);
-        sum += sub;
+        break;
     }
-    printf("First: %d\n", sum);
 }
 
+long bubble_up(
+    int layout[LINE_LENGTH],
+    int layout_length,
+    int base_groups[MAX_GROUPS][2],
+    int base_occupancy[LINE_LENGTH],
+    int group_count,
+    int group_idx,
+    int offset,
+    struct kv** cache
+) {
+    // for (int i=0; i<layout_length; i++) printf("%d", base_occupancy[i]);
+    // printf("\n");
 
-// void second(FILE* textfile) {
-//     char line[LINE_LENGTH];
-//     long long sum = 0;
+    if (group_idx == -1) {
+        // for (int i=0; i<layout_length; i++) {
+        //     if (layout[i]==2 && base_occupancy[i]==0) return 0;
+        // }
+        // for (int i=0; i<layout_length; i++) printf("%d", base_occupancy[i]);
+        // printf("\n");
+        return 1;
+    }
+    long counter = 0;
 
-//     while (fgets(line, LINE_LENGTH, textfile)) {
-//         int layout[LINE_LENGTH] = {0};
-//         int layout_length = 0;
-//         int groups[LINE_LENGTH] = {0};
-//         int group_count = 0;
+    int len = base_groups[group_idx][0];
+    int base = base_groups[group_idx][1];
 
-//         read_layout(line, &layout[1], &layout_length, groups, &group_count);
+    for (int i=base; i<=offset-len; i++) {
+        int invalid = 0;
+        for (int j=i+len; j<layout_length; j++) {
+            if (layout[j] == 2 && base_occupancy[j] == 0) invalid = 1;
+        }
+        if (group_idx == 0) {
+            for (int j=0; j<i; j++) {
+                if (layout[j] == 2) invalid = 1;
+            }
+        }
+        if (invalid) continue;
+        if (!test_group(layout, layout_length, len, i)) continue;
 
-//         int unknowns[LINE_LENGTH] = {0};
-//         int unknown_count = 0;
+        if (group_idx < group_count - 1) {
+            if (base_groups[group_idx+1][1] == i+len) continue;
+        }
 
-//         for (int i=1; i<=layout_length; i++) {
-//             if (layout[i] != -1) continue;
-//             unknowns[unknown_count + 1] = i;
-//             unknown_count++;
-//         }
-//         unknowns[0] = 0;
-//         unknowns[unknown_count + 1] = layout_length + 1;
-//         // for (int i=0; i<unknown_count+2; i++) printf("%d ", unknowns[i]);
-//         // printf("\n");
+        int groups[MAX_GROUPS][2] = {0};
+        memcpy(groups, base_groups, 2 * group_count * sizeof(int));
+        groups[group_idx][1] = i;
 
-//         int base = test_replacements(
-//             &layout[1],
-//             layout_length,
-//             groups,
-//             group_count,
-//             &unknowns[1],
-//             unknown_count,
-//             1
-//         );
-//         int r = base;
-//         if (layout[1] != 0) {
-//             r = test_replacements(
-//                 &layout[1],
-//                 layout_length+1,
-//                 groups,
-//                 group_count,
-//                 &unknowns[1],
-//                 unknown_count+1,
-//                 1
-//             );
-//         }
-//         int l = base;
-//         if (layout[layout_length] != 0) {
-//             l = test_replacements(
-//                 layout,
-//                 layout_length+1,
-//                 groups,
-//                 group_count,
-//                 unknowns,
-//                 unknown_count+1,
-//                 0
-//             );
-//         }
+        int occupancy[LINE_LENGTH] = {0};
+        memcpy(occupancy, base_occupancy, layout_length * sizeof(int));
+        for (int j=i; j<i+len; j++) occupancy[j] = 1;
+        // printf("Down at: %d %d\n", group_idx, i);
 
-//         printf("T:%d Tr:%d Tl: %d\n", base, r, l);
+        int key[2] = {group_idx, i};
+        size_t hash = stbds_hash_bytes(key, 2 * sizeof(int), SEED);
+        size_t cached_i = hmgeti(*cache, hash);
+        if (cached_i != -1) {
+            counter += hmget(*cache, hash);
+        } else {
+            long sub = bubble_up(
+                layout,
+                layout_length,
+                groups,
+                occupancy,
+                group_count,
+                group_idx-1,
+                i,
+                cache
+            );
+            hmput(*cache, hash, sub);
+            counter += sub;
+        }
+        // counter += bubble_up(
+        //     layout,
+        //     layout_length,
+        //     groups,
+        //     occupancy,
+        //     group_count,
+        //     group_idx-1,
+        //     i,
+        //     cache
+        // );
+    }
+    return counter;
+}
 
-//         // int a = tests / tests_half;
-//         long long total = base * (long long)pow(max(r, l), 4);
-//         printf("%lld\n", total);
-//         // printf("Th:%d T:%d Total: %d\n", tests_half, tests, total);
-//         // printf("\n\n");
-//         sum += total;
-//     }
-//     printf("Second: %lld\n", sum);
-// }
-
-
-void second(FILE* textfile) {
+void solve(FILE* textfile, int iter) {
     char line[LINE_LENGTH];
-    int counter = 0;
 
     long long sum = 0;
+    int counter = -1;
+
+    clock_t time = clock();
 
     while (fgets(line, LINE_LENGTH, textfile)) {
         counter++;
-        // if (counter > 2) continue;
-        int layout[LINE_LENGTH] = {0};
+        // if (counter!=1) continue;
+        int base_layout[LINE_LENGTH] = {0};
         int layout_length = 0;
-        int groups[LINE_LENGTH] = {0};
+        int base_groups[MAX_GROUPS][2] = {0};
         int group_count = 0;
-        read_layout(line, layout, &layout_length, groups, &group_count);
+        read_layout(line, base_layout, &layout_length, base_groups, &group_count);
 
-        for (int i=1; i<2; i++) {
+        for (int i=1; i<iter; i++) {
             for (int j=0; j<group_count; j++) {
-                groups[i * group_count + j] = groups[j];
+                base_groups[i * group_count + j][0] = base_groups[j][0];
+                base_groups[i * group_count + j][1] = 0;
             }
-            layout[i * (layout_length + 1) - 1] = -1;
+            base_layout[i * (layout_length + 1) - 1] = 1;
             for (int j=0; j<layout_length; j++) {
-                layout[i * (layout_length + 1) + j] = layout[j];
+                base_layout[i * (layout_length + 1) + j] = base_layout[j];
             }
         }
-        group_count *= 2;
-        layout_length *= 2;
-        layout_length += 1;
+        group_count *= iter;
+        layout_length *= iter;
+        layout_length += iter - 1;
 
-        int unknown_count = 0;
-        int unknowns[LINE_LENGTH] = {0};
-        for (int i=0; i<layout_length; i++) {
-            if (layout[i] != -1) continue;
-            unknowns[unknown_count] = i;
-            unknown_count++;
-        }
-        // for (int i=0; i<layout_length; i++) printf("%d ", layout[i]);
+        // for (int i=0; i<layout_length; i++) printf("%d", base_layout[i]);
         // printf("\n");
-        // for (int i=0; i<(layout_length-1)/2; i++) printf("%d ", layout[i]);
-        // printf("\n");
-        // for (int i=0; i<group_count; i++) printf("%d ", groups[i]);
-        // printf("\n");
-        // printf("%d %d %d\n", layout_length, group_count, unknown_count);
 
-        // printf("T:%d Tr:%d Tl: %d\n", tests_base, tests_r, tests_l);
+        int layout[LINE_LENGTH] = {0};
+        memcpy(layout, base_layout, layout_length * sizeof(int));
+        int groups[MAX_GROUPS][2] = {0};
+        memcpy(groups, base_groups, 2 * group_count * sizeof(int));
 
-        int tests_half = test_replacements(
-            layout,
-            (layout_length-1)/2,
-            groups,
-            group_count/2,
-            unknowns,
-            (unknown_count-1)/2,
-            0
-        );
-        int tests = test_replacements(
+        // for (int i=0; i<group_count; i++) printf("%d", groups[i]);
+        // printf("\n");
+
+        fit_first(
             layout,
             layout_length,
             groups,
             group_count,
-            unknowns,
-            unknown_count,
+            0,
             0
         );
 
-        // // printf("%s", line);
-        // for (int i=0; i<layout_length; i++) printf("%d ", layout[i]);
-        // printf("\n");
-        // for (int i=0; i<group_count; i++) printf("%d ", groups[i]);
+        // for (int i=0; i<group_count; i++) printf("%d|%d ", groups[i][0], groups[i][1]);
         // printf("\n");
 
-        // int tests = 0;
+        int occupancy[LINE_LENGTH] = {0};
 
-        // for (__uint128_t i=0; i<(__uint128_t)pow(2, (__uint128_t)unknown_count); i++) {
-        //     int tmp[LINE_LENGTH] = {0};
-        //     memcpy(tmp, layout, layout_length * sizeof(int));
-        //     for (int j=0; j<unknown_count; j++) {
-        //         int v = 0;
-        //         if (i & (1 << j)) v = 1;
-        //         tmp[unknowns[j]] = v;
-        //     }
-        //     // for (int i=0; i<layout_length; i++) printf("%d ", tmp[i]);
-        //     tests += test_layout(tmp, layout_length, groups, group_count);
-        //     // printf("T:%d\n", tests);
-        // }
-        // // printf("L: %d\n", layout_length);
-        // // printf("G: %d\n", group_count);
-        // // for (int i=0; i<group_count; i++) printf("%d ", groups[i]);
+        struct kv* cache = NULL;
 
-        int a = tests / tests_half;
-        long long total = (long long)tests * (long long)pow(a, 3);
-        printf("Th:%d T:%d Total: %lld\n", tests_half, tests, total);
-        // printf("\n\n");
-        sum += total;
+        long sub = bubble_up(
+            layout,
+            layout_length,
+            groups,
+            occupancy,
+            group_count,
+            group_count-1,
+            layout_length+1,
+            &cache
+        );
+
+        // printf("Counter: %d %ld\n\n", counter, sub);
+        sum += sub;
+        hmfree(cache);
         // break;
     }
-    printf("Second: %lld\n", sum);
+    printf("Time: %f\n", (double)(clock() - time) / CLOCKS_PER_SEC);
+    printf("Result: %lld\n", sum);
 }
