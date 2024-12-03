@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-const PATH = "../input/002.txt"
+const PATH = "../input/day2.input.txt"
 
 func main() {
 	file, err := os.Open(PATH)
