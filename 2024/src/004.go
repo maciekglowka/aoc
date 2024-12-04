@@ -25,8 +25,6 @@ var DIAGS = [][]int{
 	{1, -1},
 }
 var XMAS = []byte{'X', 'M', 'A', 'S'}
-var MAS = []byte{'M', 'A', 'S'}
-var SAM = []byte{'S', 'A', 'M'}
 
 func main() {
 	file, err := os.Open(PATH)
@@ -69,7 +67,7 @@ func main() {
 	total_x := 0
 	for y := 0; y < h; y++ {
 		for x := 0; x < w; x++ {
-			if board[y][x] != MAS[1] {
+			if board[y][x] != byte('A') {
 				continue
 			}
 			if has_x_mas_at(x, y, &board, h, w) {
@@ -102,17 +100,18 @@ func get_word_count_at(ox int, oy int, board *[][]byte, h int, w int) int {
 }
 
 func has_x_mas_at(ox int, oy int, board *[][]byte, h int, w int) bool {
+	r := []int{-1, 1}
 	for _, d := range DIAGS {
-		word := []byte{0, 0, 0}
-		for i := -1; i <= 1; i++ {
+		s := 0
+		for _, i := range r {
 			x := ox + d[0]*i
 			y := oy + d[1]*i
 			if !is_on_board(x, y, h, w) {
 				return false
 			}
-			word[i+1] = (*board)[y][x]
+			s += int((*board)[y][x])
 		}
-		if !slice_cmp(word, MAS) && !slice_cmp(word, SAM) {
+		if s != int('M')+int('S') {
 			return false
 		}
 	}
@@ -121,13 +120,4 @@ func has_x_mas_at(ox int, oy int, board *[][]byte, h int, w int) bool {
 
 func is_on_board(x int, y int, h int, w int) bool {
 	return x >= 0 && x < w && y >= 0 && y < h
-}
-
-func slice_cmp(a []byte, b []byte) bool {
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
 }
