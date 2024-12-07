@@ -45,6 +45,8 @@ func main() {
 		}
 	}
 
+	start := pos
+
 	w := len(board[0])
 	var visited = map[[2]int]bool{}
 
@@ -52,11 +54,36 @@ func main() {
 		if step(&board, &pos, &dir, w, h) {
 			break
 		}
-		// fmt.Println(pos)
 		visited[pos] = true
 	}
-	// fmt.Println(pos)
 	fmt.Println(len(visited))
+
+	count := 0
+
+	for k, _ := range visited {
+		var visited_dirs = map[[4]int]bool{}
+		pos = start
+		dir = [2]int{0, -1}
+
+		// temp modify the tile
+		board[k[1]][k[0]] = byte('#')
+
+		for {
+			if step(&board, &pos, &dir, w, h) {
+				break
+			}
+			_, ok := visited_dirs[[4]int{pos[0], pos[1], dir[0], dir[1]}]
+			if ok {
+				count++
+				break
+			}
+			visited_dirs[[4]int{pos[0], pos[1], dir[0], dir[1]}] = true
+		}
+
+		// restore the tile
+		board[k[1]][k[0]] = byte('.')
+	}
+	fmt.Println(count)
 }
 
 func step(board *[][]byte, pos *[2]int, dir *[2]int, w int, h int) bool {
