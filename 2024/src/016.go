@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"slices"
+	"time"
 )
 
 const PATH = "../input/016.txt"
@@ -64,7 +65,8 @@ func main() {
 	// print(&board)
 	best := find_path(p, e, &board)
 	fmt.Println(best)
-	fmt.Println(find_path_p2(p, e, &board, best))
+	ts := time.Now()
+	fmt.Println(find_path_p2(p, e, &board, best), time.Since(ts))
 }
 
 func find_path(start, end [2]int, board *[][]byte) int {
@@ -127,7 +129,6 @@ func find_path_p2(start, end [2]int, board *[][]byte, best int) int {
 		if len(q) == 0 {
 			break
 		}
-		// fmt.Println(len(q))
 		cur := q[0]
 		q = q[1:]
 
@@ -152,19 +153,10 @@ func find_path_p2(start, end [2]int, board *[][]byte, best int) int {
 			if total_cost+manhattan(n, end) > best {
 				continue
 			}
-			visited := false
-			for _, v := range cur.nodes {
-				if v == n {
-					visited = true
-				}
-			}
-			if visited {
-				continue
-			}
 			if prev, exists := best_so_far[n]; exists {
 				if prev <= total_cost {
-					// that's a lucky guess magic number - don't be worse more than 2 turns from the best
-					if total_cost-prev > 2000 {
+					// at worse be a single turn behind the best case scenario
+					if total_cost-prev > 1000 {
 						continue
 					}
 				} else {
@@ -203,6 +195,103 @@ func find_path_p2(start, end [2]int, board *[][]byte, best int) int {
 	// +1 for start
 	return len(visited) + 1
 }
+
+// func find_path_p2(start, end [2]int, board *[][]byte, best int) int {
+// 	// x, y, dx, dy, cost
+// 	var q = [][5]int{[5]int{start[0], start[1], 1, 0, 0}}
+// 	var best_so_far = map[[2]int]int{}
+// 	var came_from = map[[2]int][][2]int{}
+
+// 	for {
+// 		if len(q) == 0 {
+// 			break
+// 		}
+// 		cur := q[0]
+// 		q = q[1:]
+
+// 		for _, d := range DIRS {
+// 			if d[0] == -cur[2] && d[1] == -cur[3] {
+// 				continue
+// 			}
+// 			n := cur
+// 			n[0] += d[0]
+// 			n[1] += d[1]
+// 			n[2] = d[0]
+// 			n[3] = d[1]
+
+// 			if (*board)[n[1]][n[0]] == WALL {
+// 				continue
+// 			}
+
+// 			cost := 1
+// 			if [2]int{cur[2], cur[3]} != d {
+// 				cost += 1000
+// 			}
+// 			n[4] += cost
+// 			if n[4] > best {
+// 				continue
+// 			}
+
+// 			pos := [2]int{n[0], n[1]}
+
+// 			if prev, exists := best_so_far[pos]; exists {
+// 				if prev <= n[4] {
+// 					if prev+1000 < n[4] {
+// 						continue
+// 					}
+// 				} else {
+// 					best_so_far[pos] = n[4]
+// 				}
+
+// 				contains := false
+// 				for _, vv := range came_from[pos] {
+// 					if vv == [2]int{cur[0], cur[1]} {
+// 						contains = true
+// 					}
+// 				}
+// 				if !contains {
+// 					came_from[pos] = append(came_from[pos], [2]int{cur[0], cur[1]})
+// 				}
+
+// 			} else {
+// 				best_so_far[pos] = n[4]
+// 				came_from[pos] = [][2]int{[2]int{cur[0], cur[1]}}
+// 			}
+
+// 			if pos == end {
+// 				continue
+// 			}
+
+// 			q = append(q, n)
+
+// 		}
+// 	}
+
+// 	visited := map[[2]int]bool{}
+
+// 	// backtrack from the end
+// 	var qv = [][2]int{end}
+
+// 	for {
+// 		if len(qv) == 0 {
+// 			break
+// 		}
+// 		cur := qv[0]
+// 		qv = qv[1:]
+// 		visited[cur] = true
+
+// 		// fmt.Println(came_from[cur])
+// 		for _, v := range came_from[cur] {
+// 			qv = append(qv, v)
+// 		}
+// 	}
+
+// 	// fmt.Println(len(visited))
+// 	print(board, &visited)
+
+// 	// +1 for start
+// 	return len(visited)
+// }
 
 func manhattan(a, b [2]int) int {
 	return abs(b[0]-a[0]) + abs(b[1]-a[1])
