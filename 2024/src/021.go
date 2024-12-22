@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 	"os"
-	// "slices"
 )
 
 const PATH = "../input/021.txt"
