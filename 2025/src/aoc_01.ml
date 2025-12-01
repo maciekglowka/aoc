@@ -1,7 +1,7 @@
 let read_lines file_name =
   In_channel.with_open_text file_name In_channel.input_lines
 
-let str_lines = read_lines "../inputs/001.txt"
+let str_lines = read_lines "../input/001.txt"
 
 let parse_line line =
   let len = String.length line in
