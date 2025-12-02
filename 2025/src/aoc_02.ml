@@ -66,15 +66,12 @@ let rec solve2_single r n acc d =
   let cur = target bs d (n / d) in
   let next = target (bs + 1) d (n / d) in
 
-  (* let () = Printf.printf "Base: %d Cur: %d Next: %d \n" bs cur next in *)
-
   match cur with
   | x when x > b -> acc
   | x when x < a -> solve2_single (next, b) n acc d
   | _ -> (check_lower_d cur n (d - 1)) * cur + solve2_single (next, b) n acc d
 
 let solve2_list r n ds =
-  (* let () = Printf.printf "A: %d B: %d N: %d\n" (fst r) (snd r) n in *)
   List.fold_left (solve2_single r n) 0 ds
 
 let rec solve2 acc r =
@@ -88,10 +85,6 @@ let rec solve2 acc r =
     acc + solve2_list r n ds
   else
     acc + (solve2_list (a, mx - 1) n ds) + (solve2 0 (mx, b))
-
-(* let () = Printf.printf "%d\n" (solve2 0 (222220, 222224)) *)
-(* let () = Printf.printf "%d\n" (solve2_single (95, 115) 2 0 2) *)
-(* let () = Printf.printf "%d\n" (solve2_list (1001, 1020) 4 [2; 4]) *)
 
 let sum = List.fold_left solve2 0 (parse line)
 let () = Printf.printf "%d\n" sum
