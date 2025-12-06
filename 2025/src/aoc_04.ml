@@ -65,13 +65,11 @@ let check_roll grid c = if neighbours 0 grid c.x c.y (-1) < 4 then 1 else 0
 let solve grid = GridMap.fold (fun k _ acc -> acc + check_roll grid k) grid 0
 let s = solve input
 let () = Printf.printf "%d\n" s
-let remove_step grid = GridMap.filter (fun k _ -> check_roll grid k = 0) grid
+let remove_step grid = GridMap.partition (fun k _ -> check_roll grid k = 0) grid
 
 let rec remove_all grid =
-  let l_prev = GridMap.cardinal grid in
   let next = remove_step grid in
-  let l_next = GridMap.cardinal next in
-  if l_prev = l_next then next else remove_all next
+  if GridMap.cardinal (snd next) = 0 then fst next else remove_all (fst next)
 
 let solve2 grid =
   let a = GridMap.cardinal grid in
